@@ -65,36 +65,3 @@ class Driver(object):
             raise UnknownError
         elif self.status == 13:
             raise OperationError
-
-    def loop(self):
-        while True:
-            try:
-                # Request the card
-                self.communicate(0x31, [0x52])
-                # Anti collide
-                cart_series_no_as_hex = self.communicate(0x32, [0x93])
-                cart_series_as_decimal = int(cart_series_no_as_hex, 16)
-                cart_series_as_bytes = as_bytes(cart_series_as_decimal)
-                # Select card
-                self.communicate(0x33, [0x93] + cart_series_as_bytes)
-                # Load key
-                self.communicate(0x35, as_bytes(self.encryption_key))
-                # Authenticate
-                self.communicate(0x37, [0x60] + [4] + cart_series_as_bytes)
-                # Read card then return the code in int
-                try:
-                    return int(self.communicate(0x38, [4] + [4])[:12], 16)
-                except ValueError:
-                    raise OperationError
-            except (
-                    NoCardError,
-                    AntiColError,
-                    BitCounterError,
-                    ReturnDataError,
-                    AuthError,
-                    ProgrammingError,
-                    UnknownError,
-                    OperationError,
-                    SerialException
-            ):
-                continue
